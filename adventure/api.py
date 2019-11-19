@@ -22,7 +22,6 @@ def initialize(request):
     players = room.playerNames(player_id)
     return JsonResponse({'uuid': uuid, 'name':player.user.username, 'title':room.title, 'description':room.description, 'players':players}, safe=True)
 
-
 # @csrf_exempt
 @api_view(["POST"])
 def move(request):
@@ -65,3 +64,12 @@ def move(request):
 def say(request):
     # IMPLEMENT
     return JsonResponse({'error':"Not yet implemented"}, safe=True, status=500)
+
+@csrf_exempt
+@api_view(["GET"])
+def map(request):
+    map = []
+    rooms = Room.objects.all()
+    for room in rooms:
+        map.append({"id": room.id, "title": room.title, "description": room.description, "n": room.n_to, "s": room.s_to, "e": room.e_to, "w": room.w_to})
+    return JsonResponse({"map": map}, safe=True)
