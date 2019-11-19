@@ -66,28 +66,37 @@ def say(request):
     # IMPLEMENT
     return JsonResponse({'error':"Not yet implemented"}, safe=True, status=500)
 
-@csrf_exempt
-@api_view(["GET"])
-def map(request):
+def newmap():
     map = []
     rooms = Room.objects.all()
     for room in rooms:
-        map.append({"id": room.id, "title": room.title, "description": room.description, "n": room.n_to, "s": room.s_to, "e": room.e_to, "w": room.w_to})
+        id = room.id
+        title = room.title
+        description = room.description
+        n_to = room.n_to.pk if room.n_to is not None else 0
+        s_to = room.s_to.pk if room.s_to is not None else 0
+        e_to = room.e_to.pk if room.e_to is not None else 0
+        w_to = room.w_to.pk if room.w_to is not None else 0
+        x = room.x
+        y = room.y
+        map.append({"id": id, "title": title, "description": description, "n": n_to, "s": s_to, "e": e_to, "w": w_to, "x": x, "y": y})
     return JsonResponse({"map": map}, safe=True)
 
 @csrf_exempt
 @api_view(["GET"])
+def map(request):
+    return newmap()
+
+@csrf_exempt
+@api_view(["PUT"])
 @permission_classes([IsAdminUser])
 def newworld(request):
     Room.objects.all().delete()
-
     num_rooms = 100
     width = 10
-
     x = -1 # (this will become 0 on the first step)
     y = 0
     room_count = 0
-
     # Start generating rooms to the east
     direction = 1  # 1: east, -1: west
 
@@ -122,8 +131,4 @@ def newworld(request):
         room_count += 1
     # ^^ Put generation logic here ^^
 
-    map = []
-    rooms = Room.objects.all()
-    for room in rooms:
-        map.append({"id": room.id, "title": room.title, "description": room.description, "n": room.n_to, "s": room.s_to, "e": room.e_to, "w": room.w_to})
-    return JsonResponse({"map": map}, safe=True)
+    return newmap()
