@@ -8,11 +8,19 @@ import uuid
 class Room(models.Model):
     title = models.CharField(max_length=50, default="DEFAULT TITLE")
     description = models.CharField(max_length=500, default="DEFAULT DESCRIPTION")
-    n_to = models.IntegerField(default=0)
-    s_to = models.IntegerField(default=0)
-    e_to = models.IntegerField(default=0)
-    w_to = models.IntegerField(default=0)
-    def connectRooms(self, destinationRoom, direction):
+    n_to = models.ForeignKey("self", on_delete=models.CASCADE, blank=True, null=True, related_name="+", db_column="n_to")
+    s_to = models.ForeignKey("self", on_delete=models.CASCADE, blank=True, null=True, related_name="+", db_column="s_to")
+    e_to = models.ForeignKey("self", on_delete=models.CASCADE, blank=True, null=True, related_name="+", db_column="e_to")
+    w_to = models.ForeignKey("self", on_delete=models.CASCADE, blank=True, null=True, related_name="+", db_column="w_to")
+    x = models.IntegerField(default=0)
+    y = models.IntegerField(default=0)
+    def connect_rooms(self, destinationRoom, direction):
+        reverse_dirs = {"n": "s", "s": "n", "e": "w", "w": "e"}
+        reverse_dir = reverse_dirs[direction]
+        setattr(self, f"{direction}_to", destinationRoom)
+        setattr(destinationRoom, f"{reverse_dir}_to", self)
+        self.save()
+        destinationRoom.save()
         # destinationRoomID = destinationRoom.id
         # try:
         #     destinationRoom = Room.objects.get(id=destinationRoomID)
@@ -32,12 +40,6 @@ class Room(models.Model):
         #         return
         #     self.save()
         # ^^ ORIGINAL ^^
-        reverse_dirs = {"n": "s", "s": "n", "e": "w", "w": "e"}
-        reverse_dir = reverse_dirs[direction]
-        setattr(self, f"{direction}_to", destinationRoom)
-        setattr(destinationRoom, f"{reverse_dir}_to", self)
-        self.save()
-        destinationRoom.save()
     def playerNames(self, currentPlayerID):
         return [p.user.username for p in Player.objects.filter(currentRoom=self.id) if p.id != int(currentPlayerID)]
     def playerUUIDs(self, currentPlayerID):
