@@ -80,4 +80,8 @@ def map(request):
 @permission_classes([IsAdminUser])
 def newworld(request):
     # Put generation logic here
-    return map(request)
+    map = []
+    rooms = Room.objects.all()
+    for room in rooms:
+        map.append({"id": room.id, "title": room.title, "description": room.description, "n": room.n_to, "s": room.s_to, "e": room.e_to, "w": room.w_to})
+    return JsonResponse({"map": map}, safe=True)
