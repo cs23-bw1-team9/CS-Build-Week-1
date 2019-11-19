@@ -5,7 +5,8 @@ from django.http import JsonResponse
 from decouple import config
 from django.contrib.auth.models import User
 from .models import *
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAdminUser
 import json
 
 # instantiate pusher
@@ -73,3 +74,10 @@ def map(request):
     for room in rooms:
         map.append({"id": room.id, "title": room.title, "description": room.description, "n": room.n_to, "s": room.s_to, "e": room.e_to, "w": room.w_to})
     return JsonResponse({"map": map}, safe=True)
+
+@csrf_exempt
+@api_view(["GET"])
+@permission_classes([IsAdminUser])
+def newworld(request):
+    # Put generation logic here
+    return map(request)
