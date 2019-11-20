@@ -20,8 +20,10 @@ def initialize(request):
     player_id = player.id
     uuid = player.uuid
     room = player.room()
+    x = room.x
+    y = room.y
     players = room.playerNames(player_id)
-    return JsonResponse({'uuid': uuid, 'name':player.user.username, 'title':room.title, 'description':room.description, 'players':players}, safe=True)
+    return JsonResponse({'uuid': uuid, 'name':player.user.username, 'title':room.title, 'description':room.description, 'x': x, 'y': y, 'players':players}, safe=True)
 
 # @csrf_exempt
 @api_view(["POST"])
@@ -53,10 +55,10 @@ def move(request):
         #     pusher.trigger(f'p-channel-{p_uuid}', u'broadcast', {'message':f'{player.user.username} has walked {dirs[direction]}.'})
         # for p_uuid in nextPlayerUUIDs:
         #     pusher.trigger(f'p-channel-{p_uuid}', u'broadcast', {'message':f'{player.user.username} has entered from the {reverse_dirs[direction]}.'})
-        return JsonResponse({'name':player.user.username, 'title':nextRoom.title, 'description':nextRoom.description, 'players':players, 'error_msg':""}, safe=True)
+        return JsonResponse({'name':player.user.username, 'title':nextRoom.title, 'description':nextRoom.description, 'x': nextRoom.x, 'y': nextRoom.y, 'players':players, 'error_msg':""}, safe=True)
     else:
         players = room.playerNames(player_id)
-        return JsonResponse({'name':player.user.username, 'title':room.title, 'description':room.description, 'players':players, 'error_msg':"You cannot move that way."}, safe=True)
+        return JsonResponse({'name':player.user.username, 'title':room.title, 'description':room.description, 'x': room.x, 'y': room.y, 'players':players, 'error_msg':"You cannot move that way."}, safe=True)
 
 
 @csrf_exempt
@@ -86,41 +88,93 @@ def newmap():
 def map(request):
     return newmap()
 
+import random
+from collections import deque
 @csrf_exempt
 @api_view(["PUT"])
 @permission_classes([IsAdminUser])
 def newworld(request):
     Room.objects.all().delete()
-    num_rooms = 100
-    width = 10
-    x = -1 # (this will become 0 on the first step)
-    y = 0
-    room_count = 0
-    # Start generating rooms to the east
-    direction = 1  # 1: east, -1: west
-    # While there are rooms to be created...
-    previous_room = None
-    while room_count < num_rooms:
-        # Calculate the direction of the room to be created
-        if direction > 0 and x < width - 1:
-            room_direction = "e"
-            x += 1
-        elif direction < 0 and x > 0:
-            room_direction = "w"
-            x -= 1
-        else:
-            # If we hit a wall, turn north and reverse direction
-            room_direction = "n"
-            y += 1
-            direction *= -1
-        # Create a room in the given direction
-        room = Room(x=x, y=y, title=f"Generic Room {room_count}", description="This is a generic room.")
-        room.save()
-        # Connect the new room to the previous room
-        if previous_room is not None:
-            previous_room.connectRooms(room, room_direction)
+    mx = 30; my = 30 # width and height of the maze
+    dx = [0, 1, 0, -1]; dy = [-1, 0, 1, 0] # 4 directions to move in the maze
+    # start the maze from a random cell
+    cx = random.randint(0, mx - 1); cy = random.randint(0, my - 1)
+    room_count = 1
+    room = Room(x=cx, y=cy, title=f"Generic Room {room_count}", description="This is a generic room.")
+    room.save()
+    # maze[cy][cx] = 1
+    stack = deque([(room, 0)]) # stack element: (room w/ x&y, direction)
+
+    while room_count < 500 and len(stack) > 0:
+        (room, cd) = stack[-1]
+        cx, cy = room.x, room.y
+        # to prevent zigzags:
+        # if changed direction in the last move then cannot change again
+        if len(stack) > 2:
+            if cd != stack[-2][1]: dirRange = [cd]
+            else: dirRange = range(4)
+        else: dirRange = range(4)
+
+        # find a new cell to add
+        nlst = [] # list of available neighbors
+        for i in dirRange:
+            nx = cx + dx[i]; ny = cy + dy[i]
+            if nx >= 0 and nx < mx and ny >= 0 and ny < my:
+                if Room.objects.filter(x=nx, y=ny).exists() is False:
+                    ctr = 0 # of occupied neighbors must be 1
+                    for j in range(4):
+                        ex = nx + dx[j]; ey = ny + dy[j]
+                        if ex >= 0 and ex < mx and ey >= 0 and ey < my:
+                            if Room.objects.filter(x=ex, y=ey).exists(): ctr += 1
+                    if ctr == 1: nlst.append(i)
+
+        # if 1 or more neighbors available then randomly select one and move
+        if len(nlst) > 0:
+            ir = nlst[random.randint(0, len(nlst) - 1)]
+            cx += dx[ir]; cy += dy[ir]
+            room_count += 1
+            room = Room(x=cx, y=cy, title=f"Generic Room {room_count}", description="This is a generic room.")
             room.save()
-        # Update iteration variables
-        previous_room = room
-        room_count += 1
+            # Possibly where to connect rooms
+            dirs = ['s','e','n','w']
+            for j in range(4):
+                ex = nx + dx[j]; ey = ny + dy[j]
+                if ex >= 0 and ex < mx and ey >= 0 and ey < my:
+                    neighbor = Room.objects.filter(x=ex, y=ey)
+                    if neighbor.exists():
+                      room.connectRooms(neighbor[0], dirs[ir])
+            stack.append((room, ir))
+        else: stack.pop()
+    # num_rooms = 100
+    # width = 10
+    # x = -1 # (this will become 0 on the first step)
+    # y = 0
+    # room_count = 0
+    # # Start generating rooms to the east
+    # direction = 1  # 1: east, -1: west
+    # # While there are rooms to be created...
+    # previous_room = None
+    # while room_count < num_rooms:
+    #     # Calculate the direction of the room to be created
+    #     if direction > 0 and x < width - 1:
+    #         room_direction = "e"
+    #         x += 1
+    #     elif direction < 0 and x > 0:
+    #         room_direction = "w"
+    #         x -= 1
+    #     else:
+    #         # If we hit a wall, turn north and reverse direction
+    #         room_direction = "n"
+    #         y += 1
+    #         direction *= -1
+    #     # Create a room in the given direction
+    #     room = Room(x=x, y=y, title=f"Generic Room {room_count}", description="This is a generic room.")
+    #     room.save()
+    #     # Connect the new room to the previous room
+    #     if previous_room is not None:
+    #         previous_room.connectRooms(room, room_direction)
+    #         room.save()
+    #     # Update iteration variables
+    #     previous_room = room
+    #     room_count += 1
     return newmap()

@@ -28,14 +28,14 @@ class Room(models.Model):
     def __str__(self):
         return f"Room {self.id}: {self.title}"
 
-
+import random
 class Player(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     currentRoom = models.ForeignKey(Room, on_delete=models.SET_NULL, blank=True, null=True, related_name="+", db_column="currentRoom")
     uuid = models.UUIDField(default=uuid.uuid4, unique=True)
     def initialize(self):
         if self.currentRoom is None:
-            self.currentRoom = Room.objects.get(x=0, y=0)
+            self.currentRoom = random.choice(Room.objects.all())
             self.save()
     def room(self):
         if self.currentRoom is not None:
