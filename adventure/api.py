@@ -34,18 +34,17 @@ def move(request):
     data = json.loads(request.body)
     direction = data['direction']
     room = player.room()
-    nextRoomID = None
+    nextRoom = None
     if direction == "n":
-        nextRoomID = room.n_to
+        nextRoom = room.n_to
     elif direction == "s":
-        nextRoomID = room.s_to
+        nextRoom = room.s_to
     elif direction == "e":
-        nextRoomID = room.e_to
+        nextRoom = room.e_to
     elif direction == "w":
-        nextRoomID = room.w_to
-    if nextRoomID is not None and nextRoomID > 0:
-        nextRoom = Room.objects.get(id=nextRoomID)
-        player.currentRoom=nextRoomID
+        nextRoom = room.w_to
+    if nextRoom is not None:
+        player.currentRoom=nextRoom
         player.save()
         players = nextRoom.playerNames(player_id)
         currentPlayerUUIDs = room.playerUUIDs(player_id)
@@ -123,7 +122,7 @@ def newworld(request):
 
         # Connect the new room to the previous room
         if previous_room is not None:
-            previous_room.connect_rooms(room, room_direction)
+            previous_room.connectRooms(room, room_direction)
             room.save()
 
         # Update iteration variables

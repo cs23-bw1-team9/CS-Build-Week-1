@@ -14,7 +14,7 @@ class Room(models.Model):
     w_to = models.ForeignKey("self", on_delete=models.CASCADE, blank=True, null=True, related_name="+", db_column="w_to")
     x = models.IntegerField(default=0)
     y = models.IntegerField(default=0)
-    def connect_rooms(self, destinationRoom, direction):
+    def connectRooms(self, destinationRoom, direction):
         reverse_dirs = {"n": "s", "s": "n", "e": "w", "w": "e"}
         reverse_dir = reverse_dirs[direction]
         setattr(self, f"{direction}_to", destinationRoom)
@@ -50,15 +50,15 @@ class Room(models.Model):
 
 class Player(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    currentRoom = models.IntegerField(default=0)
+    currentRoom = models.ForeignKey(Room, on_delete=models.CASCADE, blank=True, null=True, related_name="+", db_column="currentRoom")
     uuid = models.UUIDField(default=uuid.uuid4, unique=True)
     def initialize(self):
         if self.currentRoom == 0:
-            self.currentRoom = Room.objects.first().id
+            self.currentRoom = Room.objects.get(x=0, y=0)
             self.save()
     def room(self):
         try:
-            return Room.objects.get(id=self.currentRoom)
+            return Room.objects.get(id=self.currentRoom.pk)
         except Room.DoesNotExist:
             self.initialize()
             return self.room()
