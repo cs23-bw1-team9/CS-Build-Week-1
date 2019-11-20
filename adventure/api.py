@@ -67,7 +67,7 @@ def say(request):
 
 def newmap():
     map = []
-    rooms = Room.objects.all()
+    rooms = Room.objects.all().order_by('id')
     for room in rooms:
         id = room.id
         title = room.title
