@@ -31,7 +31,7 @@ class Room(models.Model):
 
 class Player(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    currentRoom = models.ForeignKey(Room, on_delete=models.CASCADE, blank=True, null=True, related_name="+", db_column="currentRoom")
+    currentRoom = models.ForeignKey(Room, on_delete=models.SET_NULL, blank=True, null=True, related_name="+", db_column="currentRoom")
     uuid = models.UUIDField(default=uuid.uuid4, unique=True)
     def initialize(self):
         if self.currentRoom is None:
