@@ -8,29 +8,19 @@ import uuid
 class Room(models.Model):
     title = models.CharField(max_length=50, default="DEFAULT TITLE")
     description = models.CharField(max_length=500, default="DEFAULT DESCRIPTION")
-    n_to = models.IntegerField(default=0)
-    s_to = models.IntegerField(default=0)
-    e_to = models.IntegerField(default=0)
-    w_to = models.IntegerField(default=0)
+    n_to = models.ForeignKey("self", on_delete=models.CASCADE, blank=True, null=True, related_name="+", db_column="n_to")
+    s_to = models.ForeignKey("self", on_delete=models.CASCADE, blank=True, null=True, related_name="+", db_column="s_to")
+    e_to = models.ForeignKey("self", on_delete=models.CASCADE, blank=True, null=True, related_name="+", db_column="e_to")
+    w_to = models.ForeignKey("self", on_delete=models.CASCADE, blank=True, null=True, related_name="+", db_column="w_to")
+    x = models.IntegerField(default=0)
+    y = models.IntegerField(default=0)
     def connectRooms(self, destinationRoom, direction):
-        destinationRoomID = destinationRoom.id
-        try:
-            destinationRoom = Room.objects.get(id=destinationRoomID)
-        except Room.DoesNotExist:
-            print("That room does not exist")
-        else:
-            if direction == "n":
-                self.n_to = destinationRoomID
-            elif direction == "s":
-                self.s_to = destinationRoomID
-            elif direction == "e":
-                self.e_to = destinationRoomID
-            elif direction == "w":
-                self.w_to = destinationRoomID
-            else:
-                print("Invalid direction")
-                return
-            self.save()
+        reverse_dirs = {"n": "s", "s": "n", "e": "w", "w": "e"}
+        reverse_dir = reverse_dirs[direction]
+        setattr(self, f"{direction}_to", destinationRoom)
+        setattr(destinationRoom, f"{reverse_dir}_to", self)
+        self.save()
+        destinationRoom.save()
     def playerNames(self, currentPlayerID):
         return [p.user.username for p in Player.objects.filter(currentRoom=self.id) if p.id != int(currentPlayerID)]
     def playerUUIDs(self, currentPlayerID):
@@ -38,19 +28,19 @@ class Room(models.Model):
     def __str__(self):
         return f"Room {self.id}: {self.title}"
 
-
+import random
 class Player(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    currentRoom = models.IntegerField(default=0)
+    currentRoom = models.ForeignKey(Room, on_delete=models.SET_NULL, blank=True, null=True, related_name="+", db_column="currentRoom")
     uuid = models.UUIDField(default=uuid.uuid4, unique=True)
     def initialize(self):
-        if self.currentRoom == 0:
-            self.currentRoom = Room.objects.first().id
+        if self.currentRoom is None:
+            self.currentRoom = random.choice(Room.objects.all())
             self.save()
     def room(self):
-        try:
-            return Room.objects.get(id=self.currentRoom)
-        except Room.DoesNotExist:
+        if self.currentRoom is not None:
+            return self.currentRoom
+        else:
             self.initialize()
             return self.room()
     def __str__(self):
