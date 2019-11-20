@@ -102,7 +102,6 @@ def newworld(request):
     room_count = 1
     room = Room(x=cx, y=cy, title=f"Generic Room {room_count}", description="This is a generic room.")
     room.save()
-    # maze[cy][cx] = 1
     stack = deque([(room, 0)]) # stack element: (room w/ x&y, direction)
 
     while room_count < 500 and len(stack) > 0:
@@ -145,36 +144,4 @@ def newworld(request):
                       room.connectRooms(neighbor[0], dirs[ir])
             stack.append((room, ir))
         else: stack.pop()
-    # num_rooms = 100
-    # width = 10
-    # x = -1 # (this will become 0 on the first step)
-    # y = 0
-    # room_count = 0
-    # # Start generating rooms to the east
-    # direction = 1  # 1: east, -1: west
-    # # While there are rooms to be created...
-    # previous_room = None
-    # while room_count < num_rooms:
-    #     # Calculate the direction of the room to be created
-    #     if direction > 0 and x < width - 1:
-    #         room_direction = "e"
-    #         x += 1
-    #     elif direction < 0 and x > 0:
-    #         room_direction = "w"
-    #         x -= 1
-    #     else:
-    #         # If we hit a wall, turn north and reverse direction
-    #         room_direction = "n"
-    #         y += 1
-    #         direction *= -1
-    #     # Create a room in the given direction
-    #     room = Room(x=x, y=y, title=f"Generic Room {room_count}", description="This is a generic room.")
-    #     room.save()
-    #     # Connect the new room to the previous room
-    #     if previous_room is not None:
-    #         previous_room.connectRooms(room, room_direction)
-    #         room.save()
-    #     # Update iteration variables
-    #     previous_room = room
-    #     room_count += 1
     return newmap()
