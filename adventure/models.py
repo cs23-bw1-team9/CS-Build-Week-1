@@ -53,13 +53,13 @@ class Player(models.Model):
     currentRoom = models.ForeignKey(Room, on_delete=models.CASCADE, blank=True, null=True, related_name="+", db_column="currentRoom")
     uuid = models.UUIDField(default=uuid.uuid4, unique=True)
     def initialize(self):
-        if self.currentRoom == 0:
+        if self.currentRoom is None:
             self.currentRoom = Room.objects.get(x=0, y=0)
             self.save()
     def room(self):
-        try:
-            return Room.objects.get(id=self.currentRoom.pk)
-        except Room.DoesNotExist:
+        if self.currentRoom is not None:
+            return self.currentRoom
+        else:
             self.initialize()
             return self.room()
     def __str__(self):

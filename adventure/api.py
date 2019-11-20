@@ -98,8 +98,6 @@ def newworld(request):
     room_count = 0
     # Start generating rooms to the east
     direction = 1  # 1: east, -1: west
-
-
     # While there are rooms to be created...
     previous_room = None
     while room_count < num_rooms:
@@ -115,19 +113,14 @@ def newworld(request):
             room_direction = "n"
             y += 1
             direction *= -1
-
         # Create a room in the given direction
         room = Room(x=x, y=y, title=f"Generic Room {room_count}", description="This is a generic room.")
         room.save()
-
         # Connect the new room to the previous room
         if previous_room is not None:
             previous_room.connectRooms(room, room_direction)
             room.save()
-
         # Update iteration variables
         previous_room = room
         room_count += 1
-    # ^^ Put generation logic here ^^
-
     return newmap()
