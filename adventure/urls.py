@@ -5,6 +5,5 @@ urlpatterns = [
     url('init', api.initialize),
     url('move', api.move),
     url('say', api.say),
-    url('map', api.map),
-    url('newworld', api.newworld)
+    url('newmap', api.newmap)
 ]
