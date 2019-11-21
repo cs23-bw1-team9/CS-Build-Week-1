@@ -12,22 +12,25 @@ import json
 # instantiate pusher
 # pusher = Pusher(app_id=config('PUSHER_APP_ID'), key=config('PUSHER_KEY'), secret=config('PUSHER_SECRET'), cluster=config('PUSHER_CLUSTER'))
 
-def map(new=False, result=[]):
-    if new is True or len(result) == 0:
-        result = []
+def map(new=False, nodes=[], links=[]):
+    if new is True or len(nodes) == 0:
+        nodes = []; links = []
         rooms = Room.objects.all().order_by('id')
         for room in rooms:
-            id = room.id
-            title = room.title
-            description = room.description
-            n_to = room.n_to.pk if room.n_to is not None else 0
-            s_to = room.s_to.pk if room.s_to is not None else 0
-            e_to = room.e_to.pk if room.e_to is not None else 0
-            w_to = room.w_to.pk if room.w_to is not None else 0
-            x = room.x
-            y = room.y
-            result.append({"id": id, "title": title, "description": description, "n": n_to, "s": s_to, "e": e_to, "w": w_to, "x": x, "y": y})
-    return result
+            nodes.append({
+              "id": room.id,
+              "title": room.title,
+              "description": room.description,
+              "x": room.x,
+              "y": room.y,
+            })
+            for d in ['n','s','e','w']:
+                if (direction := getattr(room, f"{d}_to")) is not None:
+                    links.append({
+                      "source": room.id,
+                      "target": direction.id
+                    })
+    return {"nodes": nodes, "links": links}
 
 @csrf_exempt
 @api_view(["GET"])
