@@ -260,7 +260,7 @@ def newmap(request):
             # Possibly where to connect rooms
             dirs = ['s','e','n','w']
             for j in range(4):
-                ex = nx + dx[j]; ey = ny + dy[j]
+                ex = cx + dx[j]; ey = cy + dy[j]
                 if ex >= 0 and ex < mx and ey >= 0 and ey < my:
                     neighbor = Room.objects.filter(x=ex, y=ey)
                     if neighbor.exists():
