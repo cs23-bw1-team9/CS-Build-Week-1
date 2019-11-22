@@ -258,7 +258,7 @@ def newmap(request):
             room = Room(x=cx, y=cy, **nameit())
             room.save()
             # Possibly where to connect rooms
-            dirs = ['s','e','n','w']
+            dirs = ['s','w','n','e']
             for j in range(4):
                 ex = cx + dx[j]; ey = cy + dy[j]
                 if ex >= 0 and ex < mx and ey >= 0 and ey < my:
